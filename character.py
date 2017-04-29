@@ -16,7 +16,7 @@ class Character(object):
         # if 'evasive' enough, get a chance of missing
         if is_chosen(self.speed/50):
             # chance of getting a miss
-            if is_chosen(is_chosen(0.5)):
+            if is_chosen(0.5):
                 return self.health
         self.health -= damage
         return self.health

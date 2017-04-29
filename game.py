@@ -46,11 +46,6 @@ def update_board(board, dim, players):
 
 
 def is_adjacent(player1_pos, player2_pos, dim):
-    p1_x = player1_pos % dim
-    p1_y = (player1_pos - p1_x)/dim
-    p2_x = player2_pos % dim
-    p2_y = (player2_pos - p2_x)/dim
-
     if player2_pos == player1_pos - 1 \
             or player2_pos == player1_pos + 1 \
             or player2_pos == player1_pos - dim \
@@ -61,34 +56,42 @@ def is_adjacent(player1_pos, player2_pos, dim):
 
 def move_east(board, src, spaces):
     start = src.pos
-    board[start] = EMPTY_SPACE
-    board[start + spaces] = src.token
-    src.pos = start + spaces
-    return start + spaces
+    if board[start + spaces] == EMPTY_SPACE:
+        board[start] = EMPTY_SPACE
+        board[start + spaces] = src.token
+        src.pos = start + spaces
+        return start + spaces
+    return start
 
 
 def move_west(board, src, spaces):
     start = src.pos
-    board[start] = EMPTY_SPACE
-    board[start - spaces] = src.token
-    src.pos = start - spaces
-    return start - spaces
+    if board[start + spaces] == EMPTY_SPACE:
+        board[start] = EMPTY_SPACE
+        board[start - spaces] = src.token
+        src.pos = start - spaces
+        return start - spaces
+    return start
 
 
 def move_north(board, src, spaces):
     start = src.pos
-    board[start] = EMPTY_SPACE
-    board[start - (spaces*dim)] = src.token
-    src.pos = start - (spaces*dim)
-    return start - (spaces*dim)
+    if board[start - (spaces*dim)] == EMPTY_SPACE:
+        board[start] = EMPTY_SPACE
+        board[start - (spaces*dim)] = src.token
+        src.pos = start - (spaces*dim)
+        return start - (spaces*dim)
+    return start
 
 
 def move_south(board, src, spaces):
     start = src.pos
-    board[start] = EMPTY_SPACE
-    board[start + (spaces*dim)] = src.token
-    src.pos = start + (spaces * dim)
-    return start + (spaces*dim)
+    if board[start + (spaces * dim)] == EMPTY_SPACE:
+        board[start] = EMPTY_SPACE
+        board[start + (spaces*dim)] = src.token
+        src.pos = start + (spaces * dim)
+        return start + (spaces*dim)
+    return start
 
 
 # returns src's new position on the board
@@ -166,7 +169,9 @@ def process_player_turn(board, player_name, players):
 
 def deal_damage(player, player_target):
     attack = player.calculate_damage()
-    player_target.take_damage(attack)
+    if attack == 0:
+        print("ATTACK IS 0!")
+    print(player_target.take_damage(attack))
 
 
 def process_player_autoturn(board, player_name, players, strategy):
@@ -214,7 +219,9 @@ if __name__ == '__main__':
     player1 = Character(57, 1, 1, 1, 2, 2)
     player2 = Character(63, 2, 1, 1, 1, 2)
     player3 = Character(56, 3, 1, 1, 1, 2)
-    players = {'player1': player1, 'player2': player2, 'player3': player3}
+    player4 = Character(4, 4, 1, 1, 1, 2)
+    player5 = Character(16, 5, 1, 1, 1, 2)
+    players = {'player1': player1, 'player2': player2, 'player3': player3, 'player4': player4, 'player5': player5}
     update_board(board, dim, players)
 
     # print(get_x_y(8*8-1, board))
@@ -229,13 +236,14 @@ if __name__ == '__main__':
         print("player1 health " + str(player1.health))
         print("player2 health " + str(player2.health))
         print("player3 health " + str(player3.health))
+        print("player4 health " + str(player4.health))
+        print("player5 health " + str(player5.health))
         print_board(board, dim)
 
     print("=====")
     print("=====")
     print_board(board, dim)
 
-    if player1.health > 0:
-        print("Player 1 wins!")
-    else:
-        print("Player 2 wins!")
+    for player in players:
+        if not player.health == 0:
+            print "player " + str(player.token) + " wins"
