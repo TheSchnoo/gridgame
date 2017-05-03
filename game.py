@@ -1,9 +1,4 @@
-import sys
-
-import math
-
-import collections
-
+from board import Board
 from character import Character
 
 EMPTY_SPACE = 0
@@ -11,136 +6,22 @@ SPEED_1 = 1
 SPEED_2 = 1
 
 
-def create_empty_board(dim):
-    return [EMPTY_SPACE for x in range(dim*dim)]
-
-
-def print_board(board, dim):
-    counter = 0
-    for x in range(len(board)):
-        # print(board[counter])
-        if counter % dim == 0:
-            sys.stdout.write('[' + str(board[counter]))
-        elif counter % dim == dim - 1:
-            print(' ' + str(board[counter]) + ']')
-        else:
-            sys.stdout.write(' ' + str(board[counter]))
-        counter += 1
-
-
-# Create a character on the game board, with starting x and y positions,
-# the board dimension, and an integer representation on the board
-def update_board(board, dim, players):
-    for key in players:
-        player = players.get(key)
-        p = get_x_y(player.pos, board)
-        place = int(dim * p.y + p.x)
-        if len(board) <= 0:
-            print("ERROR: Empty board.")
-            return
-        elif place > len(board):
-            print("ERROR: Character off the board.")
-            return
-        else:
-            board[place] = player.token
-
-
-def is_adjacent(player1_pos, player2_pos, dim):
-    if player2_pos == player1_pos - 1 \
-            or player2_pos == player1_pos + 1 \
-            or player2_pos == player1_pos - dim \
-            or player2_pos == player1_pos + dim:
-            return True
-    return False
-
-
-def move_east(board, src, spaces):
-    start = src.pos
-    if board[start + spaces] == EMPTY_SPACE:
-        board[start] = EMPTY_SPACE
-        board[start + spaces] = src.token
-        src.pos = start + spaces
-        return start + spaces
-    return start
-
-
-def move_west(board, src, spaces):
-    start = src.pos
-    if board[start + spaces] == EMPTY_SPACE:
-        board[start] = EMPTY_SPACE
-        board[start - spaces] = src.token
-        src.pos = start - spaces
-        return start - spaces
-    return start
-
-
-def move_north(board, src, spaces):
-    start = src.pos
-    if board[start - (spaces*dim)] == EMPTY_SPACE:
-        board[start] = EMPTY_SPACE
-        board[start - (spaces*dim)] = src.token
-        src.pos = start - (spaces*dim)
-        return start - (spaces*dim)
-    return start
-
-
-def move_south(board, src, spaces):
-    start = src.pos
-    if board[start + (spaces * dim)] == EMPTY_SPACE:
-        board[start] = EMPTY_SPACE
-        board[start + (spaces*dim)] = src.token
-        src.pos = start + (spaces * dim)
-        return start + (spaces*dim)
-    return start
-
-
-# returns src's new position on the board
-def get_x_y(src, board):
-    src_x = src % math.sqrt(len(board))
-    src_y = (src - src_x) / math.sqrt(len(board))
-
-    Point = collections.namedtuple('Point', ['x', 'y'])
-    return Point(src_x, src_y)
-
-
-def move_x(board, src, horiz_dist):
-    if horiz_dist >= 0:
-        return move_east(board, src, SPEED_1)
-    else:
-        return move_west(board, src, SPEED_1)
-
-
-def move_y(board, src, vert_dist):
-    if vert_dist >= 0:
-        return move_south(board, src, SPEED_1)
-    else:
-        return move_north(board, src, SPEED_1)
-
-
-def follow(src, target, board):
-    src_p = get_x_y(src.pos, board)
-    target_p = get_x_y(target.pos, board)
-
-    if abs(target_p.x - src_p.x) > abs(target_p.y - src_p.y):
-        return move_x(board, src, target_p.x - src_p.x)
-    else:
-        return move_y(board, src, target_p.y - src_p.y)
-
-
 def game_continues(players):
     count = 0
     for player in players.values():
-        if player.health <= 0:
+        if player.name == "p1" and player.health <= 0:
+            return False
+        elif player.health <= 0:
             count += 1
     if len(players) - count <= 1:
         return False
     return True
 
 
-def find_target(src_player, players):
+def find_target(src_player, players, board):
     for key in players:
         if not players.get(key) == src_player:
-            if is_adjacent(src_player.pos, players.get(key).pos, math.sqrt(len(board))):
+            if board.is_adjacent(src_player.pos, players.get(key).pos):
                 return players.get(key)
     return
 
@@ -150,25 +31,42 @@ def process_player_turn(board, player_name, players):
     while player.endurance > 0:
         move = input('Your move: ')
         if move == 'u':
-            move_north(board, player, player.speed)
+            player.move_north(board)
         elif move == 'd':
-            move_south(board, player, player.speed)
+            player.move_south(board)
         elif move == 'r':
-            move_east(board, player, player.speed)
+            player.move_east(board)
         elif move == 'l':
-            move_west(board, player, player.speed)
+            player.move_west(board)
         elif move == 'a':
-            player_target = find_target(player, players)
+            player_target = find_target(player, players, board)
             if player_target:
-                if is_adjacent(player1.pos, player_target.pos, math.sqrt(len(board))):
-                    player_target.take_damage(player.attack)
-                    print(player_name + " attacks! --> target health: " + str(player_target.health))
+                player.face(player_target.pos, board.x_dim)
+                player_target.take_damage(player.attack)
+                print(player_name + " attacks! --> target health: " + str(player_target.health))
         player.endurance -= 1
-        print_board(board, math.sqrt(len(board)))
+        board.update(players)
+        board.print_board()
+
+
+def is_attack_from_side(attacker, defender):
+    if (attacker == '>' or attacker == '<') and (defender == 'V' or defender == '^'):
+        return True
+    return False
+
+
+def is_attack_from_behind(attacker, defender):
+    if attacker == defender:
+        return True
+    return False
 
 
 def deal_damage(player, player_target):
     attack = player.calculate_damage()
+    if is_attack_from_side(player.token, player_target.token):
+        attack *= 1.5
+    elif is_attack_from_behind(player.token, player_target.token):
+        attack *= 2.0
     if attack == 0:
         print("ATTACK IS 0!")
     print(player_target.take_damage(attack))
@@ -185,14 +83,14 @@ def process_player_autoturn(board, player_name, players, strategy):
 
     if strategy == 'aggressive':
         for x in range(player.endurance):
-            if is_adjacent(player.pos, player_target.pos, dim):
+            if board.is_adjacent(player.pos, player_target.pos):
                 # attack
                 deal_damage(player, player_target)
                 print(player_name + " attacks! --> target health: " + str(player_target.health))
             else:
-                follow(player, player_target, board)
+                player.follow(player_target, board)
                 print(player_name + " moves")
-        print_board(board, math.sqrt(len(board)))
+        board.print_board()
 
 
 def process_turns(players):
@@ -215,35 +113,34 @@ def process_turns(players):
 
 if __name__ == '__main__':
     dim = 8
-    board = create_empty_board(dim)
-    player1 = Character(57, 1, 1, 1, 2, 2)
-    player2 = Character(63, 2, 1, 1, 1, 2)
-    player3 = Character(56, 3, 1, 1, 1, 2)
-    player4 = Character(4, 4, 1, 1, 1, 2)
-    player5 = Character(16, 5, 1, 1, 1, 2)
+    board = Board(dim, dim)
+    player1 = Character("p1", 57, '<', 1, 1, 2, 2)
+    player2 = Character("p2", 63, 'V', 1, 1, 1, 2)
+    player3 = Character("p3", 56, '^', 1, 1, 1, 2)
+    player4 = Character("p4", 4, '>', 1, 1, 1, 2)
+    player5 = Character("p5", 16, '<', 1, 1, 1, 2)
     players = {'player1': player1, 'player2': player2, 'player3': player3, 'player4': player4, 'player5': player5}
-    update_board(board, dim, players)
+    board.update(players)
 
-    # print(get_x_y(8*8-1, board))
-
-    print_board(board, dim)
+    board.print_board()
 
     while game_continues(players):
 
         process_turns(players)
-        update_board(board, dim, players)
+        board.update(players)
 
         print("player1 health " + str(player1.health))
         print("player2 health " + str(player2.health))
         print("player3 health " + str(player3.health))
         print("player4 health " + str(player4.health))
         print("player5 health " + str(player5.health))
-        print_board(board, dim)
+        board.print_board()
 
     print("=====")
     print("=====")
-    print_board(board, dim)
+    board.print_board()
 
-    for player in players:
-        if not player.health == 0:
-            print "player " + str(player.token) + " wins"
+    if player1.health > 0:
+        print("player " + str(player1.name) + " wins")
+    else:
+        print("player " + str(player1.name) + " loses")
