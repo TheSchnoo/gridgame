@@ -3,6 +3,11 @@ import random
 EMPTY_SPACE = 0
 
 
+def print_attacks(attacks):
+    for attack_key in attacks:
+        print(attack_key + ": " + str(attacks.get(attack_key)))
+
+
 class Character(object):
 
     def __init__(self, name, pos, token, attack, defense, speed, endurance, health, strategy):
@@ -18,10 +23,12 @@ class Character(object):
         self.strategy = strategy
         self.blocking = False
 
+    # ============= DEFENSE =============
+
     def take_damage(self, damage):
         # if blocking, reduce damage taken
         if self.blocking:
-            damage /= (10*defense)
+            damage /= (10*self.defense)
             self.blocking = False
         # if defense high enough, get a chance of missing
         if is_chosen(self.defense/50):
@@ -31,7 +38,17 @@ class Character(object):
         self.health -= damage
         return self.health
 
-    def calculate_damage(self):
+    # ============= OFFENSE =============
+
+    def find_target(self, players, board):
+        for key in players:
+            if not players.get(key) == self:
+                if board.is_adjacent(self.pos, players.get(key).pos) \
+                        and players.get(key).health > 0:
+                    return players.get(key)
+        return
+
+    def calculate_damage(self, damage):
         # randomizing factor
         endurance_penalty = 0
         miss_penalty = 0
@@ -44,7 +61,41 @@ class Character(object):
         if is_chosen(endurance_penalty + miss_penalty):
             return 0
 
-        return calculate_attack(self.attack)
+        return calculate_attack(damage)
+
+    def choose_attack(self, target):
+        attacks = {'1': self.attack}
+
+        print_attacks(attacks)
+
+        # list_attacks
+        selected_attack = input("Which attack? ")
+
+        # damage = select attacks from list
+        damage = 0
+        if attacks.get(selected_attack):
+            damage = attacks.get(selected_attack)
+        self.deal_damage(damage, target)
+
+    def deal_damage(self, damage, player_target):
+        self.face(player_target.pos)
+        attack = self.calculate_damage(damage)
+
+        # if defender is significantly faster than attacker, no directional effect
+        if not player_target.speed >= self.speed * 2:
+            if is_attack_from_side(self.token, player_target.token):
+                attack *= 1.5
+            elif is_attack_from_behind(self.token, player_target.token):
+                attack *= 2.0
+
+        if attack == 0:
+            print("ATTACK IS 0!")
+
+        print(self.name + " attacks! --> target health: " + str(player_target.health))
+        print(player_target.take_damage(attack))
+        player_target.face(self.pos)
+
+    # ============= POSITIONING =============
 
     def face(self, position):
         if position == self.pos + 1:
@@ -59,7 +110,7 @@ class Character(object):
     def move_east(self, board):
         start = self.pos
         self.token = '>'
-        target_space = start + self.speed
+        target_space = start + 1
         if start % board.x_dim == board.x_dim - 1 and target_space > start:
             print("NO!")
         elif board.board[target_space] == EMPTY_SPACE:
@@ -72,7 +123,7 @@ class Character(object):
     def move_west(self, board):
         start = self.pos
         self.token = '<'
-        target_space = start - self.speed
+        target_space = start - 1
         if start % board.x_dim == 0 and target_space < start:
             print("NO!")
         elif board.board[target_space] == EMPTY_SPACE:
@@ -85,7 +136,7 @@ class Character(object):
     def move_north(self, board):
         start = self.pos
         self.token = '^'
-        target_space = start - (self.speed * board.x_dim)
+        target_space = start - board.x_dim
         if target_space < 0:
             print("NO!")
         elif board.board[target_space] == EMPTY_SPACE:
@@ -98,7 +149,7 @@ class Character(object):
     def move_south(self, board):
         start = self.pos
         self.token = 'V'
-        target_space = start + (self.speed * board.x_dim)
+        target_space = start + board.x_dim
         if target_space > len(board.board):
             print("NO!")
         elif board.board[target_space] == EMPTY_SPACE:
@@ -129,14 +180,25 @@ class Character(object):
         else:
             return self.move_y(board, target_p.y - self_p.y)
 
-    def find_target(self, players, board):
-        for key in players:
-            if not players.get(key) == self:
-                if board.is_adjacent(self.pos, players.get(key).pos) \
-                        and players.get(key).health > 0:
-                    return players.get(key)
-        return
+    def travel(self, first_step, board):
+        move_list = [first_step]
+        steps = 1
+        while steps < self.speed:
+            next_move = input('And? ')
+            move_list.append(next_move)
+            steps += 1
+        for move in move_list:
+            if move == 'u':
+                self.move_north(board)
+            elif move == 'd':
+                self.move_south(board)
+            elif move == 'r':
+                self.move_east(board)
+            elif move == 'l':
+                self.move_west(board)
 
+
+# ============= HELPERS =============
 
 def is_chosen(probability):
     return random.random() < probability
@@ -148,3 +210,18 @@ def calculate_attack(attack):
     elif is_chosen(0.10):
         return attack*.80
     return attack
+
+
+def is_attack_from_side(attacker, defender):
+    if ((attacker == '>' or attacker == '<') and (defender == 'V' or defender == '^')) \
+            or ((attacker == 'V' or attacker == '^') and (defender == '>' or defender == '<')):
+        print("attack from side!")
+        return True
+    return False
+
+
+def is_attack_from_behind(attacker, defender):
+    if attacker == defender:
+        print("attack from behind!")
+        return True
+    return False

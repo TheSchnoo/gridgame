@@ -21,60 +21,17 @@ def process_player_turn(board, player_name, players):
     player = players.get(player_name)
     while player.endurance > 0:
         move = input('Your move: ')
-        if move == 'u':
-            player.move_north(board)
-        elif move == 'd':
-            player.move_south(board)
-        elif move == 'r':
-            player.move_east(board)
-        elif move == 'l':
-            player.move_west(board)
+        if move == 'u' or move == 'd' or move == 'r' or move == 'l':
+            player.travel(move, board)
         elif move == 'b':
             player.blocking = True
             player.endurance = 0
         elif move == 'a':
             player_target = player.find_target(players, board)
             if player_target:
-                # print(player.name + " " + str(player_target.pos))
-                # player_target.take_damage(player.attack)
-                deal_damage(player, player_target)
+                player.choose_attack(player_target)
         player.endurance -= 1
         board.update(players)
-        board.print_board()
-
-
-def is_attack_from_side(attacker, defender):
-    if ((attacker == '>' or attacker == '<') and (defender == 'V' or defender == '^')) \
-            or ((attacker == 'V' or attacker == '^') and (defender == '>' or defender == '<')):
-        print("attack from side!")
-        return True
-    return False
-
-
-def is_attack_from_behind(attacker, defender):
-    if attacker == defender:
-        print("attack from behind!")
-        return True
-    return False
-
-
-def deal_damage(player, player_target):
-    player.face(player_target.pos)
-    attack = player.calculate_damage()
-
-    # if defender is significantly faster than attacker, no directional effect
-    if not player_target.speed >= player.speed * 2:
-        if is_attack_from_side(player.token, player_target.token):
-            attack *= 1.5
-        elif is_attack_from_behind(player.token, player_target.token):
-            attack *= 2.0
-
-    if attack == 0:
-        print("ATTACK IS 0!")
-
-    print(player.name + " attacks! --> target health: " + str(player_target.health))
-    print(player_target.take_damage(attack))
-    player_target.face(player.pos)
 
 
 def process_player_autoturn(board, player_name, players):
@@ -102,9 +59,10 @@ def process_player_autoturn(board, player_name, players):
         else:
             player.follow(player_target, board)
             print(player_name + " moves")
-            board.print_board()
+            # board.print_board()
+        board.update(players)
         player.endurance -= 1
-    board.print_board()
+    # board.print_board()
 
 
 def process_turns(players):
@@ -128,7 +86,8 @@ def process_turns(players):
 if __name__ == '__main__':
     dim = 8
     board = Board(dim, dim)
-    player1 = Character("p1", 57, '<', 1, 1, 1, 2, 2, "")
+    player1 = Character(name="p1", pos=57, token='<', attack=1,
+                        defense=1, speed=3, endurance=2, health=2, strategy='')
     player2 = Character("p2", 63, 'V', 1, 1, 1, 1, 2, 'aggressive')
     player3 = Character("p3", 49, '^', 1, 1, 1, 1, 2, 'defensive')
     player4 = Character("p4", 4, '>', 1, 1, 1, 1, 2, 'aggressive')
