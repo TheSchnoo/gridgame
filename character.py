@@ -5,11 +5,12 @@ EMPTY_SPACE = 0
 
 class Character(object):
 
-    def __init__(self, name, pos, token, attack, speed, endurance, health, strategy):
+    def __init__(self, name, pos, token, attack, defense, speed, endurance, health, strategy):
         self.name = name
         self.pos = pos
         self.token = token
         self.attack = attack
+        self.defense = defense
         self.speed = speed
         self.endurance = endurance
         self.health = health
@@ -20,10 +21,10 @@ class Character(object):
     def take_damage(self, damage):
         # if blocking, reduce damage taken
         if self.blocking:
-            damage /= 10
+            damage /= (10*defense)
             self.blocking = False
-        # if 'evasive' enough, get a chance of missing
-        if is_chosen(self.speed/50):
+        # if defense high enough, get a chance of missing
+        if is_chosen(self.defense/50):
             # chance of getting a miss
             if is_chosen(0.5):
                 return self.health

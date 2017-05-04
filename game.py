@@ -2,6 +2,7 @@ from board import Board
 from character import Character
 
 
+# Determines if the game should continue
 def game_continues(players):
     count = 0
     for player in players.values():
@@ -127,11 +128,11 @@ def process_turns(players):
 if __name__ == '__main__':
     dim = 8
     board = Board(dim, dim)
-    player1 = Character("p1", 57, '<', 1, 1, 2, 2, "")
-    player2 = Character("p2", 63, 'V', 1, 1, 1, 2, 'aggressive')
-    player3 = Character("p3", 49, '^', 1, 1, 1, 2, 'defensive')
-    player4 = Character("p4", 4, '>', 1, 1, 1, 2, 'aggressive')
-    player5 = Character("p5", 16, '<', 1, 1, 1, 2, 'aggressive')
+    player1 = Character("p1", 57, '<', 1, 1, 1, 2, 2, "")
+    player2 = Character("p2", 63, 'V', 1, 1, 1, 1, 2, 'aggressive')
+    player3 = Character("p3", 49, '^', 1, 1, 1, 1, 2, 'defensive')
+    player4 = Character("p4", 4, '>', 1, 1, 1, 1, 2, 'aggressive')
+    player5 = Character("p5", 16, '<', 1, 1, 1, 1, 2, 'aggressive')
     players = {'player1': player1, 'player2': player2, 'player3': player3, 'player4': player4, 'player5': player5}
     board.update(players)
 
