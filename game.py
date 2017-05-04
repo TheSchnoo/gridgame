@@ -7,6 +7,8 @@ def game_continues(players):
     for player in players.values():
         if player.name == "p1" and player.health <= 0:
             return False
+        elif player.health > 0 and player.blocking:
+            player.blocking = False
         elif player.health <= 0:
             count += 1
     if len(players) - count <= 1:
@@ -26,13 +28,15 @@ def process_player_turn(board, player_name, players):
             player.move_east(board)
         elif move == 'l':
             player.move_west(board)
+        elif move == 'b':
+            player.blocking = True
+            player.endurance = 0
         elif move == 'a':
             player_target = player.find_target(players, board)
             if player_target:
-                print(player.name + " " + str(player_target.pos))
+                # print(player.name + " " + str(player_target.pos))
                 # player_target.take_damage(player.attack)
                 deal_damage(player, player_target)
-                print(player_name + " attacks! --> target health: " + str(player_target.health))
         player.endurance -= 1
         board.update(players)
         board.print_board()
@@ -54,18 +58,25 @@ def is_attack_from_behind(attacker, defender):
 
 
 def deal_damage(player, player_target):
-    player.face(player_target.pos, board.x_dim)
+    player.face(player_target.pos)
     attack = player.calculate_damage()
-    if is_attack_from_side(player.token, player_target.token):
-        attack *= 1.5
-    elif is_attack_from_behind(player.token, player_target.token):
-        attack *= 2.0
+
+    # if defender is significantly faster than attacker, no directional effect
+    if not player_target.speed >= player.speed * 2:
+        if is_attack_from_side(player.token, player_target.token):
+            attack *= 1.5
+        elif is_attack_from_behind(player.token, player_target.token):
+            attack *= 2.0
+
     if attack == 0:
         print("ATTACK IS 0!")
+
+    print(player.name + " attacks! --> target health: " + str(player_target.health))
     print(player_target.take_damage(attack))
+    player_target.face(player.pos)
 
 
-def process_player_autoturn(board, player_name, players, strategy):
+def process_player_autoturn(board, player_name, players):
 
     player = players.get(player_name)
     player_target = ""
@@ -73,17 +84,26 @@ def process_player_autoturn(board, player_name, players, strategy):
         if key == 'player1':
             player_target = players.get(key)
             break
-
-    if strategy == 'aggressive':
-        for x in range(player.endurance):
-            if board.is_adjacent(player.pos, player_target.pos):
-                # attack
-                deal_damage(player, player_target)
-                print(player_name + " attacks! --> target health: " + str(player_target.health))
-            else:
-                player.follow(player_target, board)
-                print(player_name + " moves")
-        board.print_board()
+    while player.endurance > 0:
+        if board.is_adjacent(player.pos, player_target.pos):
+                if player.strategy == 'aggressive':
+                    # attack
+                    deal_damage(player, player_target)
+                elif player.strategy == 'defensive':
+                    if player.health > player_target.health:
+                        # attack
+                        deal_damage(player, player_target)
+                    else:
+                        # block
+                        player.blocking = True
+                        player.endurance = 0
+                    print(player_name + " blocks")
+        else:
+            player.follow(player_target, board)
+            print(player_name + " moves")
+            board.print_board()
+        player.endurance -= 1
+    board.print_board()
 
 
 def process_turns(players):
@@ -94,7 +114,7 @@ def process_turns(players):
                 if not game_continues(players):
                     break
             else:
-                process_player_autoturn(board, key, players, "aggressive")
+                process_player_autoturn(board, key, players)
                 if not game_continues(players):
                     break
         else:
@@ -107,11 +127,11 @@ def process_turns(players):
 if __name__ == '__main__':
     dim = 8
     board = Board(dim, dim)
-    player1 = Character("p1", 57, '<', 1, 1, 2, 2)
-    player2 = Character("p2", 63, 'V', 1, 1, 1, 2)
-    player3 = Character("p3", 49, '^', 1, 1, 1, 2)
-    player4 = Character("p4", 4, '>', 1, 1, 1, 2)
-    player5 = Character("p5", 16, '<', 1, 1, 1, 2)
+    player1 = Character("p1", 57, '<', 1, 1, 2, 2, "")
+    player2 = Character("p2", 63, 'V', 1, 1, 1, 2, 'aggressive')
+    player3 = Character("p3", 49, '^', 1, 1, 1, 2, 'defensive')
+    player4 = Character("p4", 4, '>', 1, 1, 1, 2, 'aggressive')
+    player5 = Character("p5", 16, '<', 1, 1, 1, 2, 'aggressive')
     players = {'player1': player1, 'player2': player2, 'player3': player3, 'player4': player4, 'player5': player5}
     board.update(players)
 

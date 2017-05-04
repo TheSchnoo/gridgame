@@ -5,7 +5,7 @@ EMPTY_SPACE = 0
 
 class Character(object):
 
-    def __init__(self, name, pos, token, attack, speed, endurance, health):
+    def __init__(self, name, pos, token, attack, speed, endurance, health, strategy):
         self.name = name
         self.pos = pos
         self.token = token
@@ -14,8 +14,14 @@ class Character(object):
         self.endurance = endurance
         self.health = health
         self.max_endurance = endurance
+        self.strategy = strategy
+        self.blocking = False
 
     def take_damage(self, damage):
+        # if blocking, reduce damage taken
+        if self.blocking:
+            damage /= 10
+            self.blocking = False
         # if 'evasive' enough, get a chance of missing
         if is_chosen(self.speed/50):
             # chance of getting a miss
@@ -39,15 +45,15 @@ class Character(object):
 
         return calculate_attack(self.attack)
 
-    def face(self, position, dim):
+    def face(self, position):
         if position == self.pos + 1:
             self.token = '>'
         elif position == self.pos - 1:
             self.token = '<'
-        elif position == self.pos - dim:
-            self.token = '^'
-        elif position == self.pos + dim:
+        elif position > self.pos + 1:
             self.token = 'V'
+        elif position < self.pos - 1:
+            self.token = '^'
 
     def move_east(self, board):
         start = self.pos
