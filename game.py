@@ -1,10 +1,6 @@
 from board import Board
 from character import Character
 
-EMPTY_SPACE = 0
-SPEED_1 = 1
-SPEED_2 = 1
-
 
 def game_continues(players):
     count = 0
@@ -16,14 +12,6 @@ def game_continues(players):
     if len(players) - count <= 1:
         return False
     return True
-
-
-def find_target(src_player, players, board):
-    for key in players:
-        if not players.get(key) == src_player:
-            if board.is_adjacent(src_player.pos, players.get(key).pos):
-                return players.get(key)
-    return
 
 
 def process_player_turn(board, player_name, players):
@@ -39,10 +27,11 @@ def process_player_turn(board, player_name, players):
         elif move == 'l':
             player.move_west(board)
         elif move == 'a':
-            player_target = find_target(player, players, board)
+            player_target = player.find_target(players, board)
             if player_target:
-                player.face(player_target.pos, board.x_dim)
-                player_target.take_damage(player.attack)
+                print(player.name + " " + str(player_target.pos))
+                # player_target.take_damage(player.attack)
+                deal_damage(player, player_target)
                 print(player_name + " attacks! --> target health: " + str(player_target.health))
         player.endurance -= 1
         board.update(players)
@@ -50,18 +39,22 @@ def process_player_turn(board, player_name, players):
 
 
 def is_attack_from_side(attacker, defender):
-    if (attacker == '>' or attacker == '<') and (defender == 'V' or defender == '^'):
+    if ((attacker == '>' or attacker == '<') and (defender == 'V' or defender == '^')) \
+            or ((attacker == 'V' or attacker == '^') and (defender == '>' or defender == '<')):
+        print("attack from side!")
         return True
     return False
 
 
 def is_attack_from_behind(attacker, defender):
     if attacker == defender:
+        print("attack from behind!")
         return True
     return False
 
 
 def deal_damage(player, player_target):
+    player.face(player_target.pos, board.x_dim)
     attack = player.calculate_damage()
     if is_attack_from_side(player.token, player_target.token):
         attack *= 1.5
@@ -116,7 +109,7 @@ if __name__ == '__main__':
     board = Board(dim, dim)
     player1 = Character("p1", 57, '<', 1, 1, 2, 2)
     player2 = Character("p2", 63, 'V', 1, 1, 1, 2)
-    player3 = Character("p3", 56, '^', 1, 1, 1, 2)
+    player3 = Character("p3", 49, '^', 1, 1, 1, 2)
     player4 = Character("p4", 4, '>', 1, 1, 1, 2)
     player5 = Character("p5", 16, '<', 1, 1, 1, 2)
     players = {'player1': player1, 'player2': player2, 'player3': player3, 'player4': player4, 'player5': player5}

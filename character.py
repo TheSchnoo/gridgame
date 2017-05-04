@@ -51,42 +51,54 @@ class Character(object):
 
     def move_east(self, board):
         start = self.pos
-        if board.board[start + self.speed] == EMPTY_SPACE:
+        self.token = '>'
+        target_space = start + self.speed
+        if start % board.x_dim == board.x_dim - 1 and target_space > start:
+            print("NO!")
+        elif board.board[target_space] == EMPTY_SPACE:
             board.board[start] = EMPTY_SPACE
-            self.token = '>'
-            board.board[start + self.speed] = self.token
-            self.pos = start + self.speed
-            return start + self.speed
+            board.board[target_space] = self.token
+            self.pos = target_space
+            return target_space
         return start
 
     def move_west(self, board):
         start = self.pos
-        if board.board[start - self.speed] == EMPTY_SPACE:
+        self.token = '<'
+        target_space = start - self.speed
+        if start % board.x_dim == 0 and target_space < start:
+            print("NO!")
+        elif board.board[target_space] == EMPTY_SPACE:
             board.board[start] = EMPTY_SPACE
-            self.token = '<'
-            board.board[start - self.speed] = self.token
-            self.pos = start - self.speed
-            return start - self.speed
+            board.board[target_space] = self.token
+            self.pos = target_space
+            return target_space
         return start
 
     def move_north(self, board):
         start = self.pos
-        if board.board[start - (self.speed * board.x_dim)] == EMPTY_SPACE:
+        self.token = '^'
+        target_space = start - (self.speed * board.x_dim)
+        if target_space < 0:
+            print("NO!")
+        elif board.board[target_space] == EMPTY_SPACE:
             board.board[start] = EMPTY_SPACE
-            self.token = '^'
-            board.board[start - (self.speed * board.x_dim)] = self.token
-            self.pos = start - (self.speed * board.x_dim)
-            return start - (self.speed * board.x_dim)
+            board.board[target_space] = self.token
+            self.pos = target_space
+            return target_space
         return start
 
     def move_south(self, board):
         start = self.pos
-        if board.board[start + (self.speed * board.x_dim)] == EMPTY_SPACE:
+        self.token = 'V'
+        target_space = start + (self.speed * board.x_dim)
+        if target_space > len(board.board):
+            print("NO!")
+        elif board.board[target_space] == EMPTY_SPACE:
             board.board[start] = EMPTY_SPACE
-            self.token = 'V'
-            board.board[start + (self.speed * board.x_dim)] = self.token
-            self.pos = start + (self.speed * board.x_dim)
-            return start + (self.speed * board.x_dim)
+            board.board[target_space] = self.token
+            self.pos = target_space
+            return target_space
         return start
 
     def move_x(self, board, horiz_dist):
@@ -109,6 +121,14 @@ class Character(object):
             return self.move_x(board, target_p.x - self_p.x)
         else:
             return self.move_y(board, target_p.y - self_p.y)
+
+    def find_target(self, players, board):
+        for key in players:
+            if not players.get(key) == self:
+                if board.is_adjacent(self.pos, players.get(key).pos) \
+                        and players.get(key).health > 0:
+                    return players.get(key)
+        return
 
 
 def is_chosen(probability):

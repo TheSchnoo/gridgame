@@ -23,8 +23,10 @@ class Board(object):
     # Create a character on the game board, with starting x and y positions,
     # the board dimension, and an integer representation on the board
     def update(self, players):
-        for key in players:
-            player = players.get(key)
+        for player in players.values():
+            if player.health <= 0:
+                player.token = EMPTY_SPACE
+                # print(player.name + " " + str(player.token))
             p = self.get_x_y(player.pos)
             place = int(self.x_dim * p.y + p.x)
             if len(self.board) <= 0:
@@ -47,6 +49,8 @@ class Board(object):
                 sys.stdout.write(' ' + str(self.board[counter]))
             counter += 1
 
+    # Determines if two positions are adjacent to one another to the north,
+    # south, east, or west
     def is_adjacent(self, pos1, pos2):
         if pos2 == pos1 - 1 \
                 or pos2 == pos1 + 1 \
